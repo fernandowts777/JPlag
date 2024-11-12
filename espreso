@@ -1,0 +1,298 @@
+import scala.io.StdIn.readLine
+import scala.util.Random
+
+object Main {
+  // Stocks iniciales
+  var stockCafe = 50  // en gramos
+  var stockAzucar = 30 // en gramos
+  var stockLeche = 0.5 // en litros
+
+  // PIN de administrador
+  val pinAdministrador = "434343"
+
+  // Función principal para mostrar el menú
+  def main(args: Array[String]): Unit = {
+    var salir = false
+    while (!salir) {
+      println("Cafetería Nospresso")
+      println("Por favor seleccione su modo:")
+      println("1) Cliente")
+      println("2) Administrador")
+      println("3) Salir")
+
+      val opcion = readLine().toInt
+
+      opcion match {
+        case 1 => modoCliente()  // Modo Cliente
+        case 2 => modoAdministrador()  // Modo Administrador
+        case 3 =>
+          println("Saliendo del programa...")
+          salir = true  // Terminar el programa
+        case _ => println("Opción no válida.")
+      }
+    }
+  }
+
+  // Función para el Modo Cliente
+  def modoCliente(): Unit = {
+    println("\nPor favor selecciona tu bebida:")
+    println("1) Café expreso - CHF 2,00")
+    println("2) Capuchino – CHF 2,50")
+    println("3) Café con leche: CHF 2,70 (pequeño), CHF 3,20 (mediano), CHF 3,70 (grande)")
+
+    val opcionBebida = readLine().toInt
+    opcionBebida match {
+      case 1 => prepararExpreso()
+      case 2 => prepararCappuccino()
+      case 3 => prepararCafeConLeche()
+      case _ => println("Opción no válida.")
+    }
+  }
+
+  // Función para preparar un Expreso
+  def prepararExpreso(): Unit = {
+    println("\nSeleccionaste Expreso.")
+    println("¿Quieres agregar azúcar?")
+    println("1) Sin azúcar")
+    println("2) Poco (5 g) - CHF 0,10")
+    println("3) Mediano (10 g) - CHF 0,20")
+    println("4) Lotes (15 g) - CHF 0,30")
+
+    val azucar = readLine().toInt
+
+    val (cafe, azucarUsado) = azucar match {
+      case 1 => (8, 0)  // 8g de café en polvo
+      case 2 => (8, 5)  // 8g de café en polvo + 5g de azúcar
+      case 3 => (8, 10) // 8g de café en polvo + 10g de azúcar
+      case 4 => (8, 15) // 8g de café en polvo + 15g de azúcar
+      case _ =>
+        println("Opción no válida. Se usará sin azúcar por defecto.")
+        (8, 0)
+    }
+
+    // Cálculo del precio
+    val precio = 2.0 + (azucarUsado.toDouble / 10.0) // Precio base + extra por azúcar
+
+    // Verificación de stock y pago
+    if (verificarStock(cafe, azucarUsado, 0)) {
+      println(s"El precio de tu Expreso es: CHF $precio")
+      realizarPago(precio, cafe, azucarUsado, 0)
+
+      println("Preparando tu bebida..")
+      println("[...]")
+      println("¡Tu Expreso está listo! ¡Feliz degustación!\n")
+
+      Thread.sleep(5000) // Espera 5000 milisegundos (5 segundos)
+
+    } else {
+      println("No hay suficientes ingredientes para preparar tu bebida.")
+    }
+  }
+
+  // Función para preparar un Cappuccino
+  def prepararCappuccino(): Unit = {
+    println("\nSeleccionaste Cappuccino. Personaliza tu bebida:")
+
+    // Selección de azúcar
+    println("¿Quieres agregar azúcar?")
+    println("1) Sin azúcar")
+    println("2) Poco (5 g) - CHF 0,10")
+    println("3) Mediano (10 g) - CHF 0,20")
+    println("4) Lotes (15 g) - CHF 0,30")
+    val azucar = readLine().toInt
+
+    // Selección de leche adicional
+    println("¿Le gustaría agregar más leche?\n(Disponible sólo para Cappuccino y Café con leche)")
+    println("1) Sí")
+    println("2) No")
+    val lecheAdicional = readLine().toInt
+
+    // Si el usuario selecciona "Sí" para agregar leche, preguntar cuántas dosis adicionales
+    var dosisLeche = 0
+    if (lecheAdicional == 1) {
+      println("¿Cuántas dosis adicionales de leche desea agregar? (Cada dosis tiene un costo adicional de CHF 0.50)")
+      dosisLeche = readLine().toInt
+    }
+
+    // Determinar las cantidades de café, azúcar y leche según la selección
+    val (cafe, leche, azucarUsado) = azucar match {
+      case 1 => (6, 0.1 + dosisLeche * 0.05, 0)  // Sin azúcar, cantidad base de leche más dosis adicionales
+      case 2 => (6, 0.1 + dosisLeche * 0.05, 5)  // Poca azúcar
+      case 3 => (6, 0.1 + dosisLeche * 0.05, 10) // Mediana azúcar
+      case 4 => (6, 0.1 + dosisLeche * 0.05, 15) // Mucha azúcar
+      case _ =>
+        println("Opción no válida. Se usará sin azúcar por defecto.")
+        (6, 0.1 + dosisLeche * 0.05, 0)
+    }
+
+    // Cálculo del precio
+    val precioBase = 2.50  // Precio base del Cappuccino
+    val precioAzucar = azucarUsado match {
+      case 0 => 0.0
+      case 5 => 0.10
+      case 10 => 0.20
+      case 15 => 0.30
+      case _ => 0.0
+    }
+
+    val precioLecheAdicional = dosisLeche * 0.5 // Leche adicional tiene un costo extra de CHF 0,50 por dosis
+
+    val precioTotal = precioBase + precioAzucar + precioLecheAdicional
+
+    // Mostrar el precio con el formato solicitado
+    println(s"Precio total: $precioBase CHF + $precioAzucar CHF + $precioLecheAdicional CHF = ${"%.2f".format(precioTotal)} CHF")
+
+    // Verificación de stock y pago
+    if (verificarStock(cafe, azucarUsado, leche)) {
+      println("Pague con Twint.")
+      val codigoTwint = generarCodigoTwint()
+      println(s"Su código de pago es: $codigoTwint")
+      println("(Esperando pago...)")
+      Thread.sleep(3000)  // Esperar 3 segundos para simular el pago
+      println("Pago confirmado. Preparando tu bebida...")
+      println("¡Tu Capuchino está listo! ¡Feliz degustación!\n")
+    } else {
+      println("No hay suficientes ingredientes para preparar tu bebida.")
+    }
+  }
+
+  // Función para preparar un Café con leche
+  def prepararCafeConLeche(): Unit = {
+    println("\nSeleccionaste Café con Leche. Personaliza tu bebida:")
+    println("¿Quieres agregar azúcar?")
+    println("1) Sin azúcar")
+    println("2) Poco (5 g) - CHF 0,10")
+    println("3) Mediano (10 g) - CHF 0,20")
+    println("4) Lotes (15 g) - CHF 0,30")
+
+    val azucar = readLine().toInt
+    println("¿Qué tamaño deseas?")
+    println("1) Pequeño")
+    println("2) Medio")
+    println("3) Grande")
+
+    val tamaño = readLine().toInt
+
+    val (cafe, leche, azucarUsado) = (azucar, tamaño) match {
+      case (1, 1) => (6, 0.12, 0)  // Pequeño, sin azúcar
+      case (2, 1) => (6, 0.12, 5)  // Pequeño, poca azúcar
+      case (3, 1) => (6, 0.12, 10) // Pequeño, media azúcar
+      case (4, 1) => (6, 0.12, 15) // Pequeño, mucha azúcar
+      case (1, 2) => (8, 0.15, 0)  // Medio, sin azúcar
+      case (2, 2) => (8, 0.15, 5)  // Medio, poca azúcar
+      case (3, 2) => (8, 0.15, 10) // Medio, media azúcar
+      case (4, 2) => (8, 0.15, 15) // Medio, mucha azúcar
+      case (1, 3) => (12, 0.2, 0)  // Grande, sin azúcar
+      case (2, 3) => (12, 0.2, 5)  // Grande, poca azúcar
+      case (3, 3) => (12, 0.2, 10) // Grande, media azúcar
+      case (4, 3) => (12, 0.2, 15) // Grande, mucha azúcar
+      case _ =>
+        println("Opción no válida. Se usará sin azúcar por defecto y tamaño pequeño.")
+        (6, 0.12, 0)
+    }
+
+    // Cálculo del precio
+    val precioBase = tamaño match {
+      case 1 => 2.70  // Precio pequeño
+      case 2 => 3.20  // Precio medio
+      case 3 => 3.70  // Precio grande
+    }
+
+    val precioAzucar = azucarUsado match {
+      case 0 => 0.0
+      case 5 => 0.10
+      case 10 => 0.20
+      case 15 => 0.30
+      case _ => 0.0
+    }
+
+    val precioTotal = precioBase + precioAzucar
+
+    // Verificación de stock y pago
+    if (verificarStock(cafe, azucarUsado, leche)) {
+      println(s"El precio de tu Café con Leche es: CHF $precioTotal")
+      realizarPago(precioTotal, cafe, azucarUsado, leche)
+      println("¡Tu Café con Leche está listo! ¡Feliz degustación!\n")
+    } else {
+      println("No hay suficientes ingredientes para preparar tu bebida.")
+    }
+  }
+
+  // Función para verificar el stock
+  def verificarStock(cafe: Int, azucar: Int, leche: Double): Boolean = {
+    if (stockCafe >= cafe && stockAzucar >= azucar && stockLeche >= leche) {
+      true
+    } else {
+      println("No hay suficientes ingredientes en stock.")
+      false
+    }
+  }
+
+  // Función para realizar el pago
+  def realizarPago(precio: Double, cafe: Int, azucar: Int, leche: Double): Unit = {
+    stockCafe -= cafe
+    stockAzucar -= azucar
+    stockLeche -= leche
+    println(s"Pago exitoso. Tu precio total es CHF ${"%.2f".format(precio)}")
+  }
+
+  // Función para generar un código Twint aleatorio
+  def generarCodigoTwint(): String = {
+    val random = new Random()
+    val codigo = random.nextInt(1000000) // Genera un número aleatorio de 6 dígitos
+    codigo.toString
+  }
+
+  // Función para el modo Administrador
+  def modoAdministrador(): Unit = {
+    println("\nIngrese el PIN de Administrador:")
+    val pin = readLine()
+
+    if (pin == pinAdministrador) {
+      println("Acceso autorizado")
+      println("Opciones de administrador:")
+      println("1) Ver stock de ingredientes")
+      println("2) Reposición stock")
+      val opcionAdmin = readLine().toInt
+
+      opcionAdmin match {
+        case 1 => verStock()
+        case 2 => reposicionStock()
+        case _ => println("Opción no válida.")
+      }
+    } else {
+      println("PIN incorrecto. Acceso denegado.")
+    }
+  }
+
+  // Función para ver el stock
+  def verStock(): Unit = {
+    println(s"\nStock actual:")
+    println(s"Café: $stockCafe gramos")
+    println(s"Azúcar: $stockAzucar gramos")
+    println(s"Leche: $stockLeche litros")
+  }
+
+  // Función para Reposición del stock
+  def reposicionStock(): Unit = {
+    println("Reposición . . .")
+    println("Agregar")
+    println("\tCafé en polvo: ")
+    val cafe = readLine().toInt
+    println("\tLeche: ")
+    val leche = readLine().toInt
+    println("\tAzúcar:")
+    val azucar = readLine().toInt
+
+    actualizarStocks(cafe, azucar, leche)
+    println("Niveles de existencias actualizados.")
+    println("Volver al menú principal...")
+  }
+
+  def actualizarStocks(cafe: Int, azucar: Int, leche: Float): Unit = {
+    stockCafe += cafe
+    stockAzucar += azucar
+    stockLeche += leche
+    println(s"Stocks actualizados: Café=$stockCafe g, Azúcar=$stockAzucar g, Leche=$stockLeche ml.")
+  }
+}
